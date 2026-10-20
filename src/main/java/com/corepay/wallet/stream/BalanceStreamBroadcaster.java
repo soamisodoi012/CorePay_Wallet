@@ -18,7 +18,8 @@ public class BalanceStreamBroadcaster {
         observersMap.computeIfAbsent(walletId, k -> ConcurrentHashMap.newKeySet()).add(observer);
     }
 
-    public void unregister(String walletId, StreamObserver<BalanceUpdateEvent> observer) {
+    public void unregister(String walletId, StreamObserver<BalanceUpdateEvent> observer)
+    {
         Set<StreamObserver<BalanceUpdateEvent>> observers = observersMap.get(walletId);
         if (observers != null) {
             observers.remove(observer);
