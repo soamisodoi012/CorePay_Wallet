@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package corepay.wallet.v1;
+
+option java_multiple_files = true;
+option java_package = "com.corepay.wallet.grpc";
+
+import "google/protobuf/timestamp.proto";
+
+service WalletService {
+  rpc CreateWallet (CreateWalletRequest) returns (WalletResponse);
+  rpc GetBalance (GetBalanceRequest) returns (BalanceResponse);
+  rpc TransferFunds (TransferRequest) returns (TransferResponse);
+  rpc StreamBalanceUpdates (StreamBalanceRequest) returns (stream BalanceUpdateEvent);
+}
+
+message CreateWalletRequest {
+  string owner_id = 1;
+  string currency_code = 2;
+}
+
+message WalletResponse {
+  string wallet_id = 1;
+  string owner_id = 2;
+  double balance = 3;
+  string currency_code = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message GetBalanceRequest {
+  string wallet_id = 1;
+}
+
+message BalanceResponse {
+  string wallet_id = 1;
+  double balance = 2;
+  string currency_code = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
+
+message TransferRequest {
+  string source_wallet_id = 1;
+  string target_wallet_id = 2;
+  double amount = 3;
+  string idempotency_key = 4;
+}
+
+message TransferResponse {
+  string transaction_id = 1;
+  string status = 2;
+  string message = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message StreamBalanceRequest {
+  string wallet_id = 1;
+}
+
+message BalanceUpdateEvent {
+  string wallet_id = 1;
+  double current_balance = 2;
+  string transaction_id = 3;
+  google.protobuf.Timestamp timestamp = 5;
+}
