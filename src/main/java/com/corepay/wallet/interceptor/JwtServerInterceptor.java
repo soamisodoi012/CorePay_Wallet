@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public class JwtServerInterceptor implements ServerInterceptor {
 
     // In production, load this securely from environment variables or Vault
-    private static final String JWT_SECRET = "YourSuperSecureSecretKeyForCorePayEngineJwtValidation2026!";
+    private static final String JWT_SECRET = "CorePayEngineJwtValidationSecretKey2026!!";
 
     public static final Context.Key<String> CLIENT_ID_CONTEXT_KEY = Context.key("clientId");
     private static final Metadata.Key<String> AUTHORIZATION_METADATA_KEY =

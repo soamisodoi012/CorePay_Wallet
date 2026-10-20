@@ -92,7 +92,7 @@ public class WalletGrpcServiceImpl extends WalletServiceGrpc.WalletServiceImplBa
         // 2. Fetch Source & Target Wallets
         WalletDocument sourceWallet = walletRepository.findByWalletId(request.getSourceWalletId())
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("Source wallet not found").asRuntimeException());
-
+        System.out.println("sourcewallet:"+sourceWallet);
         WalletDocument targetWallet = walletRepository.findByWalletId(request.getTargetWalletId())
                 .orElseThrow(() -> Status.NOT_FOUND.withDescription("Target wallet not found").asRuntimeException());
 
