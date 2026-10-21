@@ -76,6 +76,19 @@
             <artifactId>javax.annotation-api</artifactId>
             <version>1.3.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>7.0.8</version>
+        </dependency>
+
+            <!-- Add this dependency for @GrpcClient support -->
+            <dependency>
+                <groupId>net.devh</groupId>
+                <artifactId>grpc-client-spring-boot-starter</artifactId>
+                <version>3.1.0.RELEASE</version> <!-- Use the version matching your spring-boot setup -->
+            </dependency>
+
     </dependencies>
 
     <build>

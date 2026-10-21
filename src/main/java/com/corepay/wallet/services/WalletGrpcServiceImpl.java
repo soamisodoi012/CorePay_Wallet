@@ -3,6 +3,8 @@ package com.corepay.wallet.services;
 
 
 import com.corepay.wallet.grpc.*;
+import com.corepay.wallet.model.CustomerDocument;
+import com.corepay.wallet.repo.CustomerRepository;
 import com.google.protobuf.Timestamp;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -28,28 +30,43 @@ public class WalletGrpcServiceImpl extends WalletServiceGrpc.WalletServiceImplBa
     private final WalletRepository walletRepository;
     private final LedgerRepository ledgerRepository;
     private final BalanceStreamBroadcaster streamBroadcaster;
+    private final CustomerRepository customerRepository;
     private final MongoTemplate mongoTemplate;
 
     @Override
     public void createWallet(CreateWalletRequest request, StreamObserver<WalletResponse> responseObserver) {
-        String authenticatedUser = JwtServerInterceptor.CLIENT_ID_CONTEXT_KEY.get();
 
+        // 1. Validate that the Customer exists first!
+        boolean customerExists = customerRepository.findByCustomerId(request.getCustomerId()).isPresent();
+        if (!customerExists) {
+            responseObserver.onError(Status.NOT_FOUND
+                    .withDescription("Customer with ID " + request.getCustomerId() + " does not exist.")
+                    .asRuntimeException());
+            return;
+        }
+
+        // 2. Generate unique Wallet ID
+        String walletId = "wal_" + UUID.randomUUID().toString().substring(0, 8);
+        Instant now = Instant.now();
+
+        // 3. Save Wallet linked to Customer
         WalletDocument wallet = new WalletDocument();
-        wallet.setWalletId("wal_" + UUID.randomUUID().toString().substring(0, 8));
-        wallet.setOwnerId(request.getOwnerId());
-        wallet.setBalance(1000.0); // Seed default signup bonus for testing
+        wallet.setWalletId(walletId);
+        wallet.setCustomerId(request.getCustomerId()); // Set the relationship
         wallet.setCurrencyCode(request.getCurrencyCode());
-        wallet.setCreatedAt(Instant.now());
-        wallet.setUpdatedAt(Instant.now());
+        wallet.setBalance(0.0); // Starting balance
+        wallet.setCreatedAt(now);
+        wallet.setUpdatedAt(now);
 
         walletRepository.save(wallet);
 
+        // 4. Build gRPC Response
         WalletResponse response = WalletResponse.newBuilder()
-                .setWalletId(wallet.getWalletId())
-                .setOwnerId(wallet.getOwnerId())
-                .setBalance(wallet.getBalance())
+                .setWalletId(walletId)
+                .setCustomerId(wallet.getCustomerId())
                 .setCurrencyCode(wallet.getCurrencyCode())
-                .setCreatedAt(Timestamp.newBuilder().setSeconds(wallet.getCreatedAt().getEpochSecond()).build())
+                .setBalance(wallet.getBalance())
+                .setCreatedAt(now.toString())
                 .build();
 
         responseObserver.onNext(response);
@@ -158,5 +175,42 @@ public class WalletGrpcServiceImpl extends WalletServiceGrpc.WalletServiceImplBa
 
         // Keep stream open context via lifecycle callback hook if desired,
         // or let the broadcaster manage dispatching events when balances change.
+    }
+    public void createCustomer(CreateCustomerRequest request, StreamObserver<CustomerResponse> responseObserver) {
+        // 1. Check if email already exists
+        if (customerRepository.findByEmail(request.getEmail()).isPresent()) {
+            responseObserver.onError(Status.ALREADY_EXISTS
+                    .withDescription("Customer with this email already exists.")
+                    .asRuntimeException());
+            return;
+        }
+
+        // 2. Generate unique Customer ID
+        String customerId = "cust_" + UUID.randomUUID().toString().substring(0, 8);
+        Instant now = Instant.now();
+
+        // 3. Create and populate document
+        CustomerDocument customer = new CustomerDocument();
+        customer.setCustomerId(customerId);
+        customer.setFullName(request.getFullName());
+        customer.setEmail(request.getEmail());
+        customer.setPhoneNumber(request.getPhoneNumber());
+        customer.setKycStatus("VERIFIED"); // Default status for onboarding demo
+        customer.setCreatedAt(now);
+
+        customerRepository.save(customer);
+
+        // 4. Build gRPC Response
+        CustomerResponse response = CustomerResponse.newBuilder()
+                .setCustomerId(customerId)
+                .setFullName(customer.getFullName())
+                .setEmail(customer.getEmail())
+                .setPhoneNumber(customer.getPhoneNumber())
+                .setKycStatus(customer.getKycStatus())
+                .setCreatedAt(now.toString())
+                .build();
+
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 }

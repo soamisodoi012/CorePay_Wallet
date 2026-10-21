@@ -12,19 +12,20 @@ service WalletService {
   rpc GetBalance (GetBalanceRequest) returns (BalanceResponse);
   rpc TransferFunds (TransferRequest) returns (TransferResponse);
   rpc StreamBalanceUpdates (StreamBalanceRequest) returns (stream BalanceUpdateEvent);
+  rpc CreateCustomer (CreateCustomerRequest) returns (CustomerResponse);
 }
 
 message CreateWalletRequest {
-  string owner_id = 1;
+  string customer_id = 1; // Linked to a Customer
   string currency_code = 2;
 }
 
 message WalletResponse {
   string wallet_id = 1;
-  string owner_id = 2;
-  double balance = 3;
-  string currency_code = 4;
-  google.protobuf.Timestamp created_at = 5;
+  string customer_id = 2; // Return the linked customer ID
+  string currency_code = 3;
+  double balance = 4;
+  string created_at = 5;
 }
 
 message GetBalanceRequest {
@@ -61,4 +62,18 @@ message BalanceUpdateEvent {
   double current_balance = 2;
   string transaction_id = 3;
   google.protobuf.Timestamp timestamp = 5;
+}
+message CreateCustomerRequest {
+  string full_name = 1;
+  string email = 2;
+  string phone_number = 3;
+}
+
+message CustomerResponse {
+  string customer_id = 1;
+  string full_name = 2;
+  string email = 3;
+  string phone_number = 4;
+  string kyc_status = 5;
+  string created_at = 6;
 }
